@@ -493,8 +493,16 @@ typedef NS_ENUM(NSInteger, RepeatInterval) {
 - (void)userNotificationCenter:(UNUserNotificationCenter *)center
 didReceiveNotificationResponse:(UNNotificationResponse *)response
          withCompletionHandler:(void (^)(void))completionHandler NS_AVAILABLE_IOS(10.0) {
-    if ([response.actionIdentifier isEqualToString:UNNotificationDefaultActionIdentifier] && [self isAFlutterLocalNotification:response.notification.request.content.userInfo]) {
-        NSString *payload = (NSString *) response.notification.request.content.userInfo[PAYLOAD];
+
+    if ([response.actionIdentifier isEqualToString:UNNotificationDefaultActionIdentifier]) {
+        NSDictionary *userInfo = response.notification.request.content.userInfo;
+        NSString *payload = (NSString *) userInfo[PAYLOAD];
+        if (!payload && userInfo) {
+            NSError * err;
+            NSData * jsonData = [NSJSONSerialization dataWithJSONObject:userInfo options:0 error:&err];
+            payload = [[NSString alloc] initWithData:jsonData encoding:NSUTF8StringEncoding];
+        }
+
         if(_initialized) {
             [self handleSelectNotification:payload];
         } else {
